@@ -24,17 +24,23 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseEntity<String> signUp(Map<String, String> requestMap) {
         log.info("Inside signup {}", requestMap);
-        if (validateSignUpMap(requestMap)) {
-            User user = userDao.findByEmailId(requestMap.get("email"));
-            if (Objects.isNull(user)) {
-                userDao.save()
+        try {
+            if (validateSignUpMap(requestMap)) {
+                User user = userDao.findByEmailId(requestMap.get("email"));
+                if (Objects.isNull(user)) {
+                    userDao.save(getUserFromMap(requestMap));
+                    return CafeUtils.getResponseEntity("Successfully registered", HttpStatus.OK);
+                } else {
+                    return CafeUtils.getResponseEntity("Email already exists", HttpStatus.BAD_REQUEST);
+                }
             } else {
-                return CafeUtils.getResponseEntity("Email already exists", HttpStatus.BAD_REQUEST);
+                return CafeUtils.getResponseEntity(CafeConstants.INVALID_DATA, HttpStatus.BAD_REQUEST);
             }
-        } else {
-            return CafeUtils.getResponseEntity(CafeConstants.INVALID_DATA, HttpStatus.BAD_REQUEST);
         }
-        return null;
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return CafeUtils.getResponseEntity(CafeConstants.SOMETHING_WENT_WRONG,HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private boolean validateSignUpMap(Map<String, String> requestMap) {
@@ -44,7 +50,8 @@ public class UserServiceImpl implements UserService {
         }
         return false;
     }
-    private User getUserFromMap(Map<String,String > requestMap){
+
+    private User getUserFromMap(Map<String, String> requestMap) {
         User user = new User();
         user.setName(requestMap.get("name"));
         user.setContactNumber(requestMap.get("contactNumber"));
